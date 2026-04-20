@@ -344,6 +344,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
       <div style="border-top:0.5px solid #eee;padding-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Mis Automóviles</div>
+        <div id="autos-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <button class="btn-out" style="font-size:12px;padding:8px;" onclick="go('reg2add')">+ Agregar otro automóvil</button>
+      </div>
+      <div style="border-top:0.5px solid #eee;padding-top:12px;">
         <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Notificaciones</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:#111;">Alertas de mantenimiento</span><div class="sw" style="background:#B51E1E;" onclick="toggleSw(this)"><div class="th" style="right:2px;"></div></div></div>
@@ -353,6 +358,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <button class="btn-red" onclick="guardarCfg()">Guardar cambios</button>
       <button style="background:none;border:none;color:#999;font-size:12px;cursor:pointer;text-align:center;" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+
+
+  <!-- REG AGREGAR AUTO -->
+  <div class="screen" id="screen-reg2add">
+    <div class="form-wrap">
+      <div><div class="form-title">Agregar automóvil</div><div class="form-sub">Datos del vehículo adicional</div></div>
+      <div><div class="fl">Marca</div>
+        <select class="fi" id="add-marca">
+          <option value="">Selecciona marca</option>
+          <option>Toyota</option><option>Kia</option><option>Nissan</option>
+          <option>Chevrolet</option><option>Honda</option><option>Volkswagen</option>
+          <option>Hyundai</option><option>Ford</option><option>Otra</option>
+        </select>
+      </div>
+      <div><div class="fl">Modelo</div><input class="fi" type="text" id="add-modelo" placeholder="Forte, Corolla, Versa..."/></div>
+      <div class="frow">
+        <div><div class="fl">Año</div><input class="fi" type="text" inputmode="numeric" id="add-anio" placeholder="2022"/></div>
+        <div><div class="fl">Combustible</div>
+          <select class="fi" id="add-comb"><option value="gasolina">Gasolina</option><option value="diesel">Diesel</option></select>
+        </div>
+      </div>
+      <div><div class="fl">Transmisión</div>
+        <select class="fi" id="add-trans"><option value="automatica">Automática</option><option value="manual">Manual</option></select>
+      </div>
+      <div><div class="fl">Tracción</div>
+        <select class="fi" id="add-trac">
+          <option value="fwd">FWD — Delantera (más común)</option>
+          <option value="rwd">RWD — Trasera</option>
+          <option value="awd">AWD / 4x4</option>
+        </select>
+      </div>
+      <div><div class="fl">Kilometraje actual (odómetro)</div><input class="fi" type="text" inputmode="numeric" id="add-km" placeholder="60000"/></div>
+      <div><div class="fl">Km por mes (aprox)</div><input class="fi" type="text" inputmode="numeric" id="add-kmmes" placeholder="1300"/></div>
+      <button class="btn-red" style="margin-top:auto;" onclick="guardarAutoAdd()">Guardar automóvil ✓</button>
+      <button class="btn-ghost" onclick="go('config')">← Cancelar</button>
     </div>
   </div>
 
@@ -373,7 +415,7 @@ function go(name){
   var tabs=['dashboard','checklist','historial','planes','config'];
   var idx=tabs.indexOf(name);
   if(idx>=0)document.querySelectorAll('.nav-tab')[idx].classList.add('active');
-  var noNav=['splash','login','reg1','reg2','reg3','reg4'];
+  var noNav=['splash','login','reg1','reg2','reg3','reg4','reg2add'];
   document.getElementById('nav-tabs').style.display=noNav.indexOf(name)>=0?'none':'flex';
   if(name==='dashboard'){renderDash();checkNotif();}
   if(name==='checklist')renderChk();
@@ -433,11 +475,89 @@ function doReg3(){go('reg4');}
 
 function doReg4(){
   H=[];
-  localStorage.setItem('km1m',JSON.stringify({nombre:U.nombre,email:U.email,pass:U.pass,ciudad:U.ciudad,v:V,h:H,mantOk:mantOk}));
+  localStorage.setItem('km1m',JSON.stringify({nombre:U.nombre,email:U.email,pass:U.pass,ciudad:U.ciudad,v:V,h:H,mantOk:mantOk,autos:[V],autoIdx:0}));
   go('config');
 }
 
 function cerrarSesion(){U=null;V=null;H=[];mantOk=true;go('splash');}
+
+function getAutos(){
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  return data.autos||[];
+}
+
+function getAutoIdx(){
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  return data.autoIdx||0;
+}
+
+function guardarAutoAdd(){
+  var marca=document.getElementById('add-marca').value.trim();
+  var modelo=document.getElementById('add-modelo').value.trim();
+  var anio=document.getElementById('add-anio').value.trim();
+  var comb=document.getElementById('add-comb').value;
+  var trans=document.getElementById('add-trans').value;
+  var trac=document.getElementById('add-trac').value;
+  var km=parseInt(document.getElementById('add-km').value);
+  var kmmes=parseInt(document.getElementById('add-kmmes').value);
+  if(!marca||!modelo||!anio||isNaN(km)||isNaN(kmmes)){alert('Por favor completa todos los campos');return;}
+  var nuevoAuto={marca:marca,modelo:modelo,anio:anio,comb:comb,trans:trans,trac:trac,km:km,kmmes:kmmes};
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  var autos=data.autos||[V];
+  autos.push(nuevoAuto);
+  data.autos=autos;
+  localStorage.setItem('km1m',JSON.stringify(data));
+  alert('✓ Automóvil agregado');
+  go('config');
+}
+
+function cambiarAuto(idx){
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  var autos=data.autos||[V];
+  if(idx>=0&&idx<autos.length){
+    V=autos[idx];
+    data.v=V;
+    data.autoIdx=idx;
+    H=data.h||[];
+    mantOk=data.mantOk!==false;
+    localStorage.setItem('km1m',JSON.stringify(data));
+    go('dashboard');
+  }
+}
+
+function borrarAuto(idx){
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  var autos=data.autos||[V];
+  if(autos.length<=1){alert('No puedes eliminar el único automóvil registrado.');return;}
+  if(!confirm('¿Eliminar este automóvil?'))return;
+  autos.splice(idx,1);
+  data.autos=autos;
+  var autoIdx=data.autoIdx||0;
+  if(autoIdx>=autos.length)autoIdx=0;
+  data.autoIdx=autoIdx;
+  V=autos[autoIdx];
+  data.v=V;
+  localStorage.setItem('km1m',JSON.stringify(data));
+  renderCfg();
+}
+
+function renderAutosLista(){
+  var data=JSON.parse(localStorage.getItem('km1m')||'{}');
+  var autos=data.autos||[V];
+  var autoIdx=data.autoIdx||0;
+  var lista=document.getElementById('autos-lista');
+  if(!lista)return;
+  lista.innerHTML='';
+  autos.forEach(function(a,idx){
+    var activo=idx===autoIdx;
+    var d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid '+(activo?'#B51E1E':'#ddd')+';background:'+(activo?'#FCEBEB':'#fff')+';';
+    d.innerHTML='<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:'+(activo?'#B51E1E':'#111')+';">'+a.marca+' '+a.modelo+'</div><div style="font-size:11px;color:#777;">'+a.anio+' · '+a.km.toLocaleString()+' km</div></div>'
+      +(activo?'<span style="font-size:10px;font-weight:600;color:#B51E1E;">Activo</span>':'<button onclick="cambiarAuto('+idx+')" style="font-size:11px;color:#B51E1E;background:none;border:1px solid #B51E1E;border-radius:6px;padding:3px 8px;cursor:pointer;">Usar</button>')
+      +(autos.length>1?'<button onclick="borrarAuto('+idx+')" style="background:none;border:none;color:#ccc;font-size:14px;cursor:pointer;margin-left:4px;">🗑️</button>':'');
+    lista.appendChild(d);
+  });
+}
 
 function proxI(km,i){var p=Math.ceil(km/i)*i;if(p<=km)p+=i;return p;}
 
@@ -462,41 +582,71 @@ function getChecklist(km,comb,trans,trac,atrasado){
     return items;
   }
 
+  // Servicio base — siempre en cada 5,000 km
   items.push('Cambio de aceite y filtro '+(esDiesel?'(Diesel: especial DPF)':'(Gasolina: sintético)'));
   items.push('Inspección de niveles y presión de neumáticos (PSI exacto)');
 
-  if(km%10000===0){
+  // Cada 10,000 km exacto (no múltiplo de 20,000+)
+  if(km%10000===0 && km%20000!==0){
     items.push('Rotación de neumáticos');
-    items.push('Alineación y balanceo (ambos ejes)');
     items.push('Revisión visual y auditiva de frenos');
     items.push('Limpieza de postes de batería (grasa dieléctrica)');
-    items.push('Limpieza del compartimento del motor (trapo húmedo)');
     if(esDiesel)items.push('Diesel: Drenado de agua del filtro de combustible');
   }
 
-  if(km%20000===0){
-    items.push('Afinación mayor (revisión sistema de encendido y combustible)');
+  // Cada 20,000 km (no múltiplo de 40,000+)
+  if(km%20000===0 && km%40000!==0){
+    items.push('Rotación de neumáticos y alineación/balanceo');
     items.push('Cambio de filtro de aire del motor');
     items.push('Cambio de filtro de cabina (Aire Acondicionado)');
-    if(esManual)items.push('Evaluación de embrague: patinamiento, ruidos de collarín y suavidad');
+    items.push('Revisión visual y auditiva de frenos');
+    if(esManual)items.push('Evaluación de embrague: patinamiento, ruidos y suavidad');
     if(esDiesel)items.push('Diesel: Reemplazo total de filtro de combustible');
   }
 
-  if(km%40000===0){
+  // Cada 40,000 km (no múltiplo de 60,000 ni 100,000)
+  if(km%40000===0 && km%60000!==0 && km%100000!==0){
+    items.push('Rotación de neumáticos y alineación/balanceo');
+    items.push('Cambio de filtro de aire del motor');
+    items.push('Cambio de filtro de cabina (Aire Acondicionado)');
+    items.push('Cambio de líquido de frenos');
     if(esManual||esAWD||esRWD)items.push('Cambio de aceite de diferencial(es)'+(esAWD?' y transfer':''));
-    items.push('Cambio de líquido de frenos y sistema hidráulico de embrague');
     items.push('Revisión de bomba de gasolina (nivel de tanque y presión)');
+    if(esManual)items.push('Evaluación de embrague: patinamiento, ruidos y suavidad');
+    if(esDiesel)items.push('Diesel: Reemplazo total de filtro de combustible');
   }
 
-  if(km%60000===0){
-    items.push('Servicio de transmisión: cambio de fluido y filtro (No Lifetime)');
+  // Cada 60,000 km (no múltiplo de 100,000)
+  if(km%60000===0 && km%100000!==0){
+    items.push('Rotación de neumáticos y alineación/balanceo');
+    items.push('Cambio de filtro de aire del motor');
+    items.push('Cambio de filtro de cabina (Aire Acondicionado)');
+    items.push('Cambio de líquido de frenos');
+    items.push('Servicio de transmisión: cambio de fluido y filtro');
+    if(esManual||esAWD||esRWD)items.push('Cambio de aceite de diferencial(es)'+(esAWD?' y transfer':''));
     if(esDiesel){items.push('Diesel: Inspección de sistema DPF/SCR y nivel de Urea');}
     else{items.push('Gasolina: Agregar aditivo limpia inyectores (Polieteramina)');}
+    if(esManual)items.push('Evaluación de embrague: patinamiento, ruidos y suavidad');
   }
 
+  // Cada 100,000 km — servicio mayor completo
   if(km%100000===0){
-    if(esDiesel){items.push('Diesel: Inspección de bujías de precalentamiento (Glow plugs)');}
-    else{items.push('Gasolina: Cambio de bujías (Preventivo)');}
+    items.push('Rotación de neumáticos y alineación/balanceo');
+    items.push('Cambio de filtro de aire del motor');
+    items.push('Cambio de filtro de cabina (Aire Acondicionado)');
+    items.push('Cambio de líquido de frenos');
+    items.push('Servicio de transmisión: cambio de fluido y filtro');
+    if(esManual||esAWD||esRWD)items.push('Cambio de aceite de diferencial(es)'+(esAWD?' y transfer':''));
+    items.push('Revisión de bomba de gasolina (nivel de tanque y presión)');
+    if(esDiesel){
+      items.push('Diesel: Inspección de bujías de precalentamiento (Glow plugs)');
+      items.push('Diesel: Inspección de sistema DPF/SCR y nivel de Urea');
+    }else{
+      items.push('Gasolina: Cambio de bujías (Preventivo)');
+      items.push('Gasolina: Agregar aditivo limpia inyectores (Polieteramina)');
+    }
+    if(esManual)items.push('Evaluación de embrague: patinamiento, ruidos y suavidad');
+    items.push('Inspección general de mangueras, bandas y sistema de enfriamiento');
   }
 
   return items;
@@ -667,6 +817,7 @@ function renderCfg(){
   if(!U||!V)return;
   document.getElementById('cfg-nom').textContent=U.nombre;
   document.getElementById('cfg-av').textContent=U.nombre.charAt(0).toUpperCase();
+  renderAutosLista();
   document.getElementById('c-marca').value=V.marca;
   document.getElementById('c-modelo').value=V.modelo;
   document.getElementById('c-anio').value=V.anio;
